@@ -1,237 +1,178 @@
-# Excel AI Engine
+# 🧠 Excel AI Engine
 
-An AI-powered engine for reading, analyzing, and updating Excel data using Large Language Models (LLMs).
+A Python-based intelligent Excel automation engine powered by **Google Gemini 2.5 Flash**, designed to understand, analyze, and generate Excel-related insights and data transformations directly through natural language prompts.
 
-## Features
+---
 
-- **Natural Language Queries**: Ask questions about your data in plain English
-- **Data Operations**: Math, aggregations, joins, pivot/unpivot, date operations, filters
-- **LLM Integration**: Uses OpenAI GPT-4 via LangChain for intelligent data analysis
-- **REST API**: Easy-to-use API endpoints for all operations
-- **Multiple Sheets**: Support for multi-sheet Excel files
-- **Structured & Unstructured Data**: Handle both numeric/categorical and text data
+## 🚀 Overview
 
-## Installation
+**Excel AI Engine** integrates Google’s Gemini 2.5 Flash LLM with Python’s Excel-processing ecosystem to bring conversational AI to your spreadsheets.  
+You can describe tasks in plain English — and the engine performs them using libraries like **Pandas** and **OpenPyXL**.
 
-1. Install dependencies:
+Example:  
+> “Summarize total sales by region and generate a new sheet with top 5 performers.”
+
+---
+
+## 🧩 Key Features
+
+- ⚡ **Gemini 2.5 Flash Integration** – Fast and lightweight LLM with strong reasoning and coding capabilities.  
+- 📊 **Smart Excel Automation** – Reads, analyzes, and modifies Excel sheets intelligently.  
+- 💬 **Natural Language Commands** – Perform data operations with simple text prompts.  
+- 🧱 **Modular Architecture** – Easy to extend for new data types or AI models.  
+- 🔐 **Secure Setup** – Environment-based key management with `.env` file.  
+- 🧠 **Context-Aware Execution** – Understands table structure and intent for accurate results.  
+- 🧰 **Error Handling** – Gracefully handles missing files, invalid inputs, or model errors.
+
+---
+
+## 🛠️ Tech Stack
+
+| Component | Technology |
+|------------|-------------|
+| **Language** | Python 3.10+ |
+| **LLM API** | Google Gemini 2.5 Flash |
+| **Excel Handling** | Pandas, OpenPyXL |
+| **Environment** | `python-dotenv` |
+| **Runtime** | Command-line / IDE execution |
+
+---
+
+## 📦 Installation
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/yourusername/excel-ai-engine.git
+cd excel-ai-engine
+```
+
+### 2. Create and Activate Virtual Environment
+```bash
+python -m venv venv
+venv\Scripts\activate    # Windows
+# or
+source venv/bin/activate # macOS / Linux
+```
+
+### 3. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-2. Set up environment variables:
-```bash
-cp .env.example .env
-# Edit .env and add your OPENAI_API_KEY
-```
+---
 
-## Usage
+## ⚙️ Configuration
 
-### Start the Server
+Create a `.env` file in the project root with your Gemini API key:
 
 ```bash
-python excel_ai_engine.py
+GEMINI_API_KEY=your_api_key_here
 ```
 
-Or using uvicorn directly:
-```bash
-uvicorn excel_ai_engine:app --reload
-```
+*(Make sure your API key is valid for Google Gemini 2.5 Flash.)*
 
-The API will be available at `http://localhost:8000`
+---
 
-### API Documentation
+## ▶️ Usage
 
-Once running, visit:
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
-
-### Example API Calls
-
-#### 1. Upload Excel File
+Run the main script:
 
 ```bash
-curl -X POST "http://localhost:8000/upload" \
-  -H "Content-Type: multipart/form-data" \
-  -F "file=@excel_ai_data.xlsx"
+python excel_ai_engine_gemini.py
 ```
 
-#### 2. Natural Language Query
+You’ll be prompted for:
+1. The path to your Excel file  
+2. A natural language command (e.g., “Find total revenue by quarter”)  
 
-```bash
-curl -X POST "http://localhost:8000/analyze" \
-  -F "file_path=uploads/excel_ai_data.xlsx" \
-  -F "query=Calculate the average salary by department" \
-  -F "sheet_name=Structured_Data"
+The system will process the file, run AI-powered analysis, and output a new or modified Excel file based on your prompt.
+
+---
+
+## 🧠 Example Interaction
+
+**Input Prompt:**
+```
+Find total profit by region and generate a summary sheet.
 ```
 
-Example queries:
-- "What is the average salary by department?"
-- "Show me the top 10 employees by performance score"
-- "Calculate the correlation between years of experience and salary"
-- "Filter employees hired after 2020"
-- "Group employees by age ranges (20-30, 31-40, 41-50, 51+) and show average salary"
+**Engine Actions:**
+- Reads the input Excel file  
+- Processes sheet data with Pandas  
+- Calculates regional totals  
+- Writes results to a new sheet named *Summary*
 
-#### 3. Math Operations
+**Output:**
+✅ A neatly formatted Excel sheet containing aggregated results.
 
-```bash
-curl -X POST "http://localhost:8000/operations/math" \
-  -F "file_path=uploads/excel_ai_data.xlsx" \
-  -F "operation=multiply" \
-  -F "col1=salary" \
-  -F "col2=performance_score" \
-  -F "result_col=weighted_salary" \
-  -F "sheet_name=Structured_Data"
-```
+---
 
-#### 4. Aggregations
-
-```bash
-curl -X POST "http://localhost:8000/operations/aggregate" \
-  -F "file_path=uploads/excel_ai_data.xlsx" \
-  -F "columns=salary,years_experience" \
-  -F "functions=sum,mean,min,max,std" \
-  -F "sheet_name=Structured_Data"
-```
-
-#### 5. Filter Data
-
-```bash
-curl -X POST "http://localhost:8000/operations/filter" \
-  -F "file_path=uploads/excel_ai_data.xlsx" \
-  -F "condition=salary > 100000 and is_manager == True" \
-  -F "sheet_name=Structured_Data"
-```
-
-#### 6. Create Pivot Table
-
-```bash
-curl -X POST "http://localhost:8000/operations/pivot" \
-  -F "file_path=uploads/excel_ai_data.xlsx" \
-  -F "values=salary" \
-  -F "index=department" \
-  -F "columns=is_manager" \
-  -F "aggfunc=mean" \
-  -F "sheet_name=Structured_Data"
-```
-
-## Supported Operations
-
-### 1. Basic Math Operations
-- Addition, Subtraction, Multiplication, Division
-- Creates new columns with results
-
-### 2. Aggregations
-- Functions: sum, mean, min, max, count, std
-- Can aggregate multiple columns simultaneously
-
-### 3. Joins
-- Inner, Left, Right, Outer joins
-- Merge multiple datasets
-
-### 4. Pivot Tables
-- Create pivot tables with custom aggregations
-- Unpivot (melt) tables back to long format
-
-### 5. Date Operations
-- Extract year, month, day, day of week
-- Calculate date differences
-- Date filtering and grouping
-
-### 6. Filter Operations
-- Conditional filtering using pandas query syntax
-- Multiple conditions with AND/OR logic
-
-### 7. Natural Language Queries
-- Ask any data analysis question
-- LLM automatically determines the best approach
-- Generates and executes appropriate pandas code
-
-## Sample Data
-
-The repository includes `excel_ai_data.xlsx` with sample data:
-
-**Structured_Data Sheet** (1000 rows, 10 columns):
-- employee_id, name, department, age, salary
-- years_experience, performance_score, projects_completed
-- hire_date, is_manager
-
-**Unstructured_Data Sheet** (1000 rows, 5 columns):
-- record_id, feedback, description, comments, notes
-- Text data for optional sentiment analysis
-
-## Architecture
+## 🪄 Project Structure
 
 ```
-User Request
-    ↓
-FastAPI REST API
-    ↓
-File Upload Handler
-    ↓
-Excel Reader (openpyxl/pandas)
-    ↓
-LLM Query Processor (LangChain)
-    ↓
-OpenAI GPT-4
-    ↓
-Data Operations Engine (pandas)
-    ↓
-Result Formatter
-    ↓
-Response (JSON/Excel)
+excel-ai-engine/
+│
+├── excel_ai_engine_gemini.py     # Main application file
+├── requirements.txt              # Python dependencies
+├── .env                          # Environment variables (Gemini API key)
+├── /data                         # Input/Output Excel files (optional)
+└── /docs                         # Documentation (optional)
 ```
 
-## Error Handling
+---
 
-All endpoints include comprehensive error handling:
-- File validation
-- Query validation
-- Operation validation
-- Detailed error messages
-- HTTP status codes
+## 🧰 Troubleshooting
 
-## Security Considerations
+| Issue | Possible Cause | Solution |
+|-------|----------------|-----------|
+| `ModuleNotFoundError` | Missing dependency | Run `pip install -r requirements.txt` |
+| `Invalid API key` | Wrong Gemini key in `.env` | Verify and re-enter your key |
+| Excel not updating | File locked or in use | Close the Excel file and rerun |
+| Timeout or no response | Poor network / API rate limit | Retry after a short delay |
 
-- File upload size limits
-- File type validation (.xlsx, .xls only)
-- Input sanitization for queries
-- API key management via environment variables
-- No data persistence (stateless API)
+---
 
-## Testing
+## 🔒 Security Notes
 
-Test with the provided sample data:
-```bash
-# Upload the sample file
-curl -X POST "http://localhost:8000/upload" \
-  -F "file=@excel_ai_data.xlsx"
+- Never hardcode your Gemini API key — always use the `.env` file.  
+- Avoid uploading sensitive Excel data to public repositories.  
+- Consider adding `.env` and data folders to `.gitignore`.
 
-# Run a test query
-curl -X POST "http://localhost:8000/analyze" \
-  -F "file_path=uploads/excel_ai_data.xlsx" \
-  -F "query=Show summary statistics for all numeric columns"
+Example `.gitignore`:
+```
+.env
+__pycache__/
+data/
 ```
 
-## Limitations
+---
 
-- Requires OpenAI API key (GPT-4 access)
-- Large files may take longer to process
-- Complex queries may require multiple API calls
-- Text analysis features require additional LLM calls
+## ⚡ Performance Tips
 
-## Future Enhancements
+- Use **smaller data chunks** for faster AI inference.  
+- Cache or pre-process heavy data operations.  
+- Log all responses for debugging and improvement.
 
-- Support for CSV files
-- Batch processing
-- Data visualization generation
-- Query history and caching
-- Multi-user support with authentication
-- WebSocket support for real-time updates
+---
 
-## License
+## 🧩 Future Enhancements
 
-MIT License
+- 🧮 Multi-sheet reasoning and inter-sheet linking  
+- 🗣️ Voice prompt support  
+- ☁️ Cloud-based Excel processing (Drive / Sheets API)  
+- 🧑‍💻 Web UI for non-technical users
 
-## Contributing
+---
 
-Contributions welcome! Please submit issues and pull requests.
+## 🧑‍💻 Author
+
+**Abhishek Kumar**  
+📍 Developer | AI & Automation Enthusiast  
+💼 Project: Excel AI Engine (Gemini 2.5 Flash)
+
+---
+
+## 📝 License
+
+This project is released under the **MIT License**.  
+Feel free to use, modify, and distribute with attribution.
