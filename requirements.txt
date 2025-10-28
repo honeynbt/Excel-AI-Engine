@@ -1,0 +1,19 @@
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.6
+
+pandas==2.2.3
+openpyxl==3.1.2
+
+# LangChain + Gemini (aligned majors)
+langchain==1.0.2
+langchain-google-genai==3.0.0
+langchain-experimental==0.3.4
+
+# Google SDK + its matching proto package
+google-generativeai==0.8.5
+google-ai-generativelanguage==0.6.15
+
+faker==22.1.0
+python-dotenv==1.0.0
+pydantic>=2.7.4,<3
