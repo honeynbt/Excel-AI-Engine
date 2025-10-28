@@ -1,6 +1,7 @@
 """
-Excel AI Engine - Main Application
+Excel AI Engine - Main Application (Gemini Version)
 Handles file upload, natural language query processing, and data operations
+Uses Google Gemini API instead of OpenAI
 """
 
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form
@@ -15,7 +16,7 @@ import json
 from pathlib import Path
 import logging
 from langchain_experimental.agents import create_pandas_dataframe_agent
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from openpyxl import load_workbook
 
 # Configure logging
@@ -24,8 +25,8 @@ logger = logging.getLogger(__name__)
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="Excel AI Engine",
-    description="AI-powered Excel data analysis and manipulation engine",
+    title="Excel AI Engine (Gemini)",
+    description="AI-powered Excel data analysis and manipulation engine using Google Gemini",
     version="1.0.0"
 )
 
@@ -46,19 +47,24 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 OUTPUT_DIR = Path("outputs")
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-# Initialize OpenAI LLM (requires OPENAI_API_KEY environment variable)
+# Initialize Gemini LLM
 def get_llm():
-    """Initialize and return LLM instance"""
+    """Initialize and return Gemini LLM instance"""
     try:
-        llm = ChatOpenAI(
-            model="gpt-4",
+        api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            raise ValueError("GEMINI_API_KEY or GOOGLE_API_KEY not found in environment")
+
+        llm = ChatGoogleGenerativeAI(
+            model="gemini-1.5-flash",  # Free tier model
+            google_api_key=api_key,
             temperature=0,
-            api_key=os.getenv("OPENAI_API_KEY")
+            convert_system_message_to_human=True
         )
         return llm
     except Exception as e:
-        logger.error(f"Failed to initialize LLM: {e}")
-        raise HTTPException(status_code=500, detail="LLM initialization failed")
+        logger.error(f"Failed to initialize Gemini LLM: {e}")
+        raise HTTPException(status_code=500, detail=f"LLM initialization failed: {str(e)}")
 
 # Excel file operations
 class ExcelDataHandler:
@@ -192,7 +198,7 @@ class DataOperationsEngine:
 
 # LangChain agent for natural language queries
 class NLQueryProcessor:
-    """Process natural language queries using LangChain"""
+    """Process natural language queries using LangChain with Gemini"""
 
     def __init__(self, llm):
         self.llm = llm
@@ -200,14 +206,14 @@ class NLQueryProcessor:
     def process_query(self, df: pd.DataFrame, query: str) -> Any:
         """Process natural language query on DataFrame"""
         try:
-            # Create pandas DataFrame agent
+            # Create pandas DataFrame agent with Gemini
             agent = create_pandas_dataframe_agent(
                 self.llm,
                 df,
-                agent_type="openai-tools",
+                agent_type="tool-calling",  # Updated for newer LangChain
                 verbose=True,
-                allow_dangerous_code=True,  # Required for pandas operations
-                return_intermediate_steps=False
+                allow_dangerous_code=True,
+                handle_parsing_errors=True
             )
 
             # Execute query
@@ -223,19 +229,21 @@ async def root():
     """Health check endpoint"""
     return {
         "status": "healthy",
-        "service": "Excel AI Engine",
+        "service": "Excel AI Engine (Gemini)",
         "version": "1.0.0"
     }
 
 @app.get("/health")
 async def health_check():
     """Detailed health check"""
+    gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
     return {
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
         "components": {
             "api": "operational",
-            "llm": "configured" if os.getenv("OPENAI_API_KEY") else "not configured"
+            "llm": "configured" if gemini_key else "not configured",
+            "provider": "Google Gemini"
         }
     }
 
@@ -288,7 +296,7 @@ async def analyze_data(
     sheet_name: Optional[str] = Form(None)
 ):
     """
-    Analyze Excel data using natural language query
+    Analyze Excel data using natural language query with Gemini
 
     Args:
         file_path: Path to uploaded Excel file
@@ -303,7 +311,7 @@ async def analyze_data(
     - "Show me the top 10 employees by performance score"
     - "What is the correlation between years of experience and salary?"
     - "Filter employees with salary greater than 100000"
-    - "Create a pivot table showing average salary by department and age group"
+    - "Create a summary showing average salary by department"
     """
     try:
         # Check if file exists
@@ -313,7 +321,7 @@ async def analyze_data(
         # Read Excel file
         df = ExcelDataHandler.read_excel(file_path, sheet_name)
 
-        # Initialize LLM and processor
+        # Initialize Gemini LLM and processor
         llm = get_llm()
         processor = NLQueryProcessor(llm)
 
@@ -327,7 +335,8 @@ async def analyze_data(
             "metadata": {
                 "rows_analyzed": len(df),
                 "columns": list(df.columns),
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
+                "llm_provider": "Google Gemini"
             }
         }
 
@@ -346,17 +355,6 @@ async def math_operation(
 ):
     """
     Perform basic math operations (add, subtract, multiply, divide)
-
-    Args:
-        file_path: Path to Excel file
-        operation: Operation type (add, subtract, multiply, divide)
-        col1: First column name
-        col2: Second column name
-        result_col: Name for result column
-        sheet_name: Optional sheet name
-
-    Returns:
-        Updated DataFrame with new column
     """
     try:
         df = ExcelDataHandler.read_excel(file_path, sheet_name)
@@ -382,21 +380,12 @@ async def math_operation(
 @app.post("/operations/aggregate")
 async def aggregate_data(
     file_path: str = Form(...),
-    columns: str = Form(...),  # Comma-separated column names
-    functions: str = Form(...),  # Comma-separated aggregation functions
+    columns: str = Form(...),
+    functions: str = Form(...),
     sheet_name: Optional[str] = Form(None)
 ):
     """
     Calculate aggregations (sum, mean, min, max, count, std)
-
-    Args:
-        file_path: Path to Excel file
-        columns: Comma-separated column names
-        functions: Comma-separated aggregation functions
-        sheet_name: Optional sheet name
-
-    Returns:
-        Aggregation results
     """
     try:
         df = ExcelDataHandler.read_excel(file_path, sheet_name)
@@ -424,14 +413,6 @@ async def filter_data(
 ):
     """
     Filter data based on condition
-
-    Args:
-        file_path: Path to Excel file
-        condition: Filter condition (e.g., "salary > 100000")
-        sheet_name: Optional sheet name
-
-    Returns:
-        Filtered data
     """
     try:
         df = ExcelDataHandler.read_excel(file_path, sheet_name)
@@ -467,17 +448,6 @@ async def create_pivot(
 ):
     """
     Create pivot table
-
-    Args:
-        file_path: Path to Excel file
-        values: Column to aggregate
-        index: Column for index
-        columns: Column for columns
-        aggfunc: Aggregation function
-        sheet_name: Optional sheet name
-
-    Returns:
-        Pivot table
     """
     try:
         df = ExcelDataHandler.read_excel(file_path, sheet_name)
