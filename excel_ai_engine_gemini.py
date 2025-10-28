@@ -4,6 +4,7 @@ Handles file upload, natural language query processing, and data operations
 Uses Google Gemini API instead of OpenAI
 """
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel
@@ -19,6 +20,7 @@ from langchain_experimental.agents import create_pandas_dataframe_agent
 from langchain_google_genai import ChatGoogleGenerativeAI
 from openpyxl import load_workbook
 
+load_dotenv()
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -56,7 +58,7 @@ def get_llm():
             raise ValueError("GEMINI_API_KEY or GOOGLE_API_KEY not found in environment")
 
         llm = ChatGoogleGenerativeAI(
-            model="gemini-1.5-flash",  # Free tier model
+            model="gemini-2.5-flash",  # Free tier model
             google_api_key=api_key,
             temperature=0,
             convert_system_message_to_human=True
